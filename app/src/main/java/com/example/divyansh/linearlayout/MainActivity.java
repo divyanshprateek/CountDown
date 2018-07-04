@@ -1,5 +1,10 @@
 package com.example.divyansh.linearlayout;
 
+import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.os.CountDownTimer;
+import android.os.Handler;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -7,52 +12,79 @@ import android.view.View;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    ListView list;
-    public void createTable(int times)
+    SeekBar seek;
+    TextView text;
+    Button bt;
+    MediaPlayer mp;
+    Boolean isActive = false;
+    CountDownTimer count;
+    public void reset()
     {
-        final ArrayList<String> table  = new ArrayList<String>();
-
-        for(int i = 1; i <= 10;i++)
-        {
-            table.add(times+ " * " + i + " = "+ Integer.toString(times * i));
-        }
-
-        ArrayAdapter<String> arrayadapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,table);
-        list.setAdapter(arrayadapter);
-
+        text.setText("0:30");
+        seek.setProgress(30);
+        count.cancel();
+        bt.setText("GO");
+        seek.setEnabled(true);
+        isActive = false;
     }
+    public void updateTimer(int i) {
+        int min = (int) i / 60;
+        int sec = i - min * 60;
+        String s = Integer.toString(sec);
+        if (sec <= 9) {
+            s = "0" + s;
+        }
+        text.setText(min + ":" + s);
+    }
+
+    public void startTimer(View view) {
+        if(isActive == false) {
+            isActive = true;
+            bt = (Button) findViewById(R.id.go);
+            seek.setEnabled(false);
+            bt.setText("STOP");
+            count = new CountDownTimer(seek.getProgress() * 1000 + 100, 1000) {
+                public void onTick(long millisecondsUntilDone) {
+                    updateTimer((int) millisecondsUntilDone / 1000);
+                }
+
+                public void onFinish() {
+                    text.setText("0:00");
+                    mp = MediaPlayer.create(getApplicationContext(), R.raw.horn);
+                    mp.start();
+                    reset();
+                    //buzzer
+                }
+            }.start();
+        }
+        else
+        {
+            reset();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        seek = (SeekBar) findViewById(R.id.seek);
+        text = (TextView) findViewById(R.id.text);
 
-        list = (ListView) findViewById(R.id.list);
-        final SeekBar seek = (SeekBar) findViewById(R.id.seek);
-        seek.setMax(20);
-        seek.setProgress(10);
-
+        seek.setMax(600);
+        seek.setProgress(30);
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                int min = 1;
-                int times;
-                if(i < min)
-                {
-                    times = min;
-                    seek.setProgress(min);
-                }
-                else
-                {
-                    times = i;
-                }
-                createTable(times);
+                updateTimer(i);
             }
 
             @Override
@@ -65,7 +97,17 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        createTable(10);
+        /*
+        final Handler handler = new Handler();
+        Runnable run = new Runnable() {
+            @Override
+            public void run() {
+                Log.i("This is new session"," starting ...");
+                handler.postDelayed(this,1000);
+            }
+        };
+        handler.post(run);
     }
-
+    */
+    }
 }
